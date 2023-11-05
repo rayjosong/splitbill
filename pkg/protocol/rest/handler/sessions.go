@@ -1,11 +1,26 @@
 package handler
 
 import (
+	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
 	"github.com/rayjosong/splitbill/pkg/user"
+	"golang.org/x/crypto/bcrypt"
 )
 
-func HandleSignup(c *gin.Context) {
+type UserCredentialsService interface {
+	SaveCredentials(user user.User, username string, password string) error
+	CheckCredentials(username string, password string) (bool, error)
+}
+
+type SessionHandler struct {
+	service UserCredentialsService
+}
+
+func NewSessionHandler() SessionHandler {
+	return SessionHandler{}
+}
+
+func (s SessionHandler) HandleSignup(c *gin.Context) {
 	username := c.PostForm("username")
 	password := c.PostForm("password")
 
@@ -14,27 +29,24 @@ func HandleSignup(c *gin.Context) {
 
 	user := user.User{Name: name, Email: email}
 
-	// save user details into DB
-
-	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
-	if err != nil {
-		c.JSON(500, gin.H{"message": "Could not hash password"})
-		return
+	if err := s.service.SaveCredentials(user, username, password); err != nil {
+		c.JSON(500, gin.H{"message": "Could not save credentials"})
 	}
-	credentials := user.UserCredentials{UserID: user.ID, Username: username, Password: string(hashedPassword)}
-	// save user credential details into D
+
+	c.JSON(201, gin.H{"message": "Saved user successfuly"})
 }
 
-func HandleLogin(c *gin.Context) {
+func (s SessionHandler) HandleLogin(c *gin.Context) {
 	username := c.PostForm("username")
 	password := c.PostForm("password")
 
-	var credentials user.UserCredentials
-	// search DB for credentials based on username and password
+	valid, err := s.service.CheckCredentials(username, password)
+	if err != nil {
+		c.JSON(500, gin.H{"message": "cannot find user"})
+	}
 
-	if err := bcrypt.CompareHashAndPassword([]byte(credentials.Password), []byte(password)); err != nil {
+	if !valid {
 		c.JSON(401, gin.H{"message": "Credentials incorrect"})
-		return
 	}
 	session := sessions.Default(c)
 	session.Set("user_id", credentials.UserID)

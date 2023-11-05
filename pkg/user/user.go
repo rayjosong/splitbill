@@ -6,14 +6,6 @@ import (
 	"gorm.io/gorm"
 )
 
-type UserCredentials struct {
-	gorm.Model
-	UserID   uint   `gorm:"unique;not null"`
-	Username string `gorm:"unique;not null"`
-	Password string `gorm:"not null"`
-	User     User   `gorm:"foreignkey:UserID"`
-}
-
 type User struct {
 	gorm.Model
 	UserID   uint      `gorm:"primary_key" json:"user_id"`
