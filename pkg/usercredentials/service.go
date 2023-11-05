@@ -13,7 +13,7 @@ type UserCredentialsSerivce struct {
 
 type UserCredentialsRepo interface {
 	Save(credentials UserCredentials) error
-	FindCredentials(username string, password string) (UserCredentials, error)
+	FindCredentials(username string) (UserCredentials, error)
 }
 
 func NewUserCredentialsService(repo UserCredentialsRepo) UserCredentialsSerivce {
@@ -34,8 +34,17 @@ func (s UserCredentialsSerivce) SaveCredentials(user user.User, username string,
 	return nil
 }
 
-func (s UserCredentialsSerivce) CheckCredentials(username string, password string) (bool, error) {
-	savedCredentials, err := s.UserCredentialsRepo.FindCredentials(username, password)
+func (s UserCredentialsSerivce) GetCredentialsForUser(username string) (*UserCredentials, error) {
+	savedCredentials, err := s.UserCredentialsRepo.FindCredentials(username)
+	if err != nil {
+		return nil, fmt.Errorf("error finding credentials: %w", err)
+	}
+
+	return &savedCredentials, nil
+}
+
+func (s UserCredentialsSerivce) IsCredentialValid(username string, password string) (bool, error) {
+	savedCredentials, err := s.UserCredentialsRepo.FindCredentials(username)
 	if err != nil {
 		return false, fmt.Errorf("error while verifying credentials: %w", err)
 	}

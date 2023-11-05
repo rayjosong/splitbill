@@ -21,7 +21,7 @@ func (r UserCredentialsRepository) Save(c usercredentials.UserCredentials) error
 	return nil
 }
 
-func (r UserCredentialsRepository) FindCredentials(username string, password string) (*usercredentials.UserCredentials, error) {
+func (r UserCredentialsRepository) FindCredentials(username string) (*usercredentials.UserCredentials, error) {
 	var credentials usercredentials.UserCredentials
 	if err := r.db.Where("username = ?", username).First(&credentials).Error; err != nil {
 		return nil, fmt.Errorf("error finding credentials: %w", err)
