@@ -1,4 +1,4 @@
-package user
+package handler
 
 import (
 	"github.com/gin-gonic/gin"
@@ -6,16 +6,18 @@ import (
 )
 
 type UserHandler struct {
-	repo UserRepository
+	service UserService
 }
 
-type UserRepository interface {
-	InsertUser(u user.User) error
+type UserService interface {
+	CreateUser(u user.User) error
+	GetUserDetailsByID(id string) (user.User, error)
+	GetUserDetailsByEmail(email string) (user.User, error)
 }
 
-func NewUserHandler(repo UserRepository) UserHandler {
+func NewUserHandler(service UserService) UserHandler {
 	return UserHandler{
-		repo: repo,
+		service: service,
 	}
 }
 
@@ -28,7 +30,7 @@ func (u UserHandler) Create(c *gin.Context) {
 		return
 	}
 
-	if err := u.repo.InsertUser(user); err != nil {
+	if err := u.service.CreateUser(user); err != nil {
 		c.JSON(500, gin.H{
 			"message": "Error inserting user",
 		})
