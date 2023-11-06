@@ -5,7 +5,6 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/rayjosong/splitbill/pkg/user"
 	"github.com/rayjosong/splitbill/pkg/usercredentials"
-	"golang.org/x/crypto/bcrypt"
 )
 
 type UserCredentialsService interface {

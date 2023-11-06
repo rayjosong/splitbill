@@ -7,13 +7,10 @@ import (
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-contrib/sessions/cookie"
 	"github.com/gin-gonic/gin"
-	"github.com/gorilla/sessions"
 	"github.com/jinzhu/gorm"
 	"github.com/rayjosong/splitbill/pkg/protocol/rest/handler"
-	"github.com/rayjosong/splitbill/pkg/protocol/rest/handler/user"
 	userModel "github.com/rayjosong/splitbill/pkg/user"
-	"github.com/rayjosong/splitbill/pkg/user/repository"
-	"golang.org/x/crypto/bcrypt"
+	"github.com/rayjosong/splitbill/pkg/usercredentials"
 )
 
 type DBConfig struct {
@@ -41,34 +38,18 @@ func main() {
 	}
 	defer db.Close()
 
-	db.AutoMigrate(&userModel.User{}, &userModel.UserCredentials{})
+	db.AutoMigrate(&userModel.User{}, &usercredentials.UserCredentials{})
 
 	router := gin.Default()
 
 	store := cookie.NewStore([]byte("secret"))
 	router.Use(sessions.Sessions("mysession", store))
 
-	router.POST("/signup", handler.HandleSignup)
+	// **************** API *****************
+	SessionHandler := handler.NewSessionHandler()
+	router.POST("/signup", SessionHandler.HandleSignup)
 
-	router.POST("/login", func(c *gin.Context) {
-		username := c.PostForm("username")
-		password := c.PostForm("password")
-
-		var credentials userModel.UserCredentials
-		// search DB for credentials based on username and password
-
-		if err := bcrypt.CompareHashAndPassword([]byte(credentials.Password), []byte(password)); err != nil {
-			c.JSON(401, gin.H{"message": "Credentials incorrect"})
-			return
-		}
-		session := sessions.Default(c)
-		session.Set("user_id", credentials.UserID)
-		session.Save()
-
-		c.JSON(200, gin.H{
-			"message": "Logged in successfully",
-		})
-	})
+	router.POST("/login", SessionHandler.HandleLogin)
 
 	router.GET("/", func(c *gin.Context) {
 		c.JSON(200, gin.H{
@@ -76,10 +57,9 @@ func main() {
 		})
 	})
 
-	userRepository := repository.NewUserRepo(db)
-	userHandler := user.NewUserHandler(userRepository)
-	router.POST("/users", userHandler.Create)
-	router.POST("/users/:id/friends", userHandler.HandlePostFriends)
+	GroupHandler := handler.NewGroupHandler()
+	router.POST("/api/groups", GroupHandler.HandlePost)
+	// ************ END OF API ************
 
 	router.Run()
 }
