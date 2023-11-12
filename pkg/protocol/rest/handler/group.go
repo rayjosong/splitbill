@@ -6,6 +6,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/rayjosong/splitbill/pkg/group"
+	"github.com/rayjosong/splitbill/pkg/user"
 )
 
 type GroupService interface {
