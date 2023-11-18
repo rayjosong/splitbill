@@ -5,20 +5,27 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
-	"github.com/rayjosong/splitbill/pkg/group"
-	"github.com/rayjosong/splitbill/pkg/user"
+	"github.com/rayjosong/splitbill/internal/models"
 )
 
 type GroupService interface {
-	CreateGroup(group.Group) error
+	CreateGroup(models.Group) error
 }
 
 type GroupHandler struct {
-	service GroupService
+	service           GroupService
+	userSessionGetter userSessionGetter
 }
 
-func NewGroupHandler(s GroupService) GroupHandler {
-	return GroupHandler{service: s}
+type userSessionGetter interface {
+	GetCurrentUser(c *gin.Context) (models.User, error)
+}
+
+func NewGroupHandler(s GroupService, userSessionGetter userSessionGetter) GroupHandler {
+	return GroupHandler{
+		service:           s,
+		userSessionGetter: userSessionGetter,
+	}
 }
 
 func (h GroupHandler) HandlePost(c *gin.Context) {
@@ -31,18 +38,16 @@ func (h GroupHandler) HandlePost(c *gin.Context) {
 		return
 	}
 
-	// Get the currently logged in user
-	user, err := getCurrentUser(c)
+	user, err := h.userSessionGetter.GetCurrentUser(c)
 	if err != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "user must be logged in"})
 		return
 	}
 
-	// Create new group
-	group := group.Group{
+	group := models.Group{
 		GroupID: uuid.New().String(),
 		Name:    reqBody.Name,
-		Members: []user.User{*user},
+		Members: []models.User{user},
 	}
 
 	if err := h.service.CreateGroup(group); err != nil {

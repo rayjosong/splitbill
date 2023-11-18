@@ -1,9 +1,13 @@
 package group
 
-import "fmt"
+import (
+	"fmt"
+
+	"github.com/rayjosong/splitbill/internal/models"
+)
 
 type GroupRepository interface {
-	InsertGroup(Group) error
+	InsertGroup(models.Group) error
 }
 
 type GroupService struct {
@@ -14,7 +18,7 @@ func NewGroupService(repo GroupRepository) GroupService {
 	return GroupService{repo: repo}
 }
 
-func (s GroupService) CreateGroup(group Group) error {
+func (s GroupService) CreateGroup(group models.Group) error {
 	if err := s.repo.InsertGroup(group); err != nil {
 		return fmt.Errorf("cannot insert group into repo: %w", err)
 	}

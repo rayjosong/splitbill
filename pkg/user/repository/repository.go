@@ -1,10 +1,11 @@
 package repository
 
 import (
+	"errors"
 	"fmt"
 
-	"github.com/rayjosong/splitbill/pkg/user"
-	"gorm.io/gorm"
+	"github.com/jinzhu/gorm"
+	"github.com/rayjosong/splitbill/internal/models"
 )
 
 type UserRepository struct {
@@ -15,7 +16,7 @@ func NewUserRepository(db *gorm.DB) UserRepository {
 	return UserRepository{db}
 }
 
-func (r UserRepository) Save(user user.User) error {
+func (r UserRepository) Save(user models.User) error {
 	result := r.db.Create(&user)
 
 	if result.Error != nil {
@@ -23,4 +24,18 @@ func (r UserRepository) Save(user user.User) error {
 	}
 
 	return nil
+}
+
+func (r UserRepository) GetUserFromID(userID string) (*models.User, error) {
+	var user models.User
+
+	result := r.db.First(&user, "id = ?", userID)
+	if result.Error != nil {
+		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
+			return nil, nil
+		}
+		return nil, result.Error
+	}
+
+	return &user, nil
 }

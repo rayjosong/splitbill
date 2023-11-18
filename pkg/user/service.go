@@ -1,8 +1,12 @@
 package user
 
 import (
+	"errors"
 	"fmt"
 
+	"github.com/gin-contrib/sessions"
+	"github.com/gin-gonic/gin"
+	"github.com/rayjosong/splitbill/internal/models"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -15,10 +19,11 @@ func NewUserSessionService(repo UserCreationRepo) UserSessionService {
 }
 
 type UserCreationRepo interface {
-	Save(user User) error
+	Save(user models.User) error
+	GetUserFromID(userID string) (*models.User, error)
 }
 
-func (s UserSessionService) CreateUser(user User, username string, password string) error {
+func (s UserSessionService) CreateUser(user models.User, username string, password string) error {
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	if err != nil {
 		return fmt.Errorf("cannot hash password: %w", err)
@@ -39,3 +44,28 @@ func (s UserSessionService) IsCredentialValid(inputPassword string, savedPasswor
 
 	return true
 }
+
+func (s UserSessionService) GetCurrentUser(c *gin.Context) (*models.User, error) {
+	session := sessions.Default(c)
+	userID := session.Get("user_id")
+
+	if userID == nil {
+		return nil, errors.New("user not logged in")
+	}
+
+	id, ok := userID.(string)
+	if !ok {
+		return nil, errors.New("cannot cast userid to string")
+	}
+
+	user, err := s.repo.GetUserFromID(id)
+	if err != nil {
+		return nil, fmt.Errorf("cannot get user from ID: %w", err)
+	}
+
+	if user.ID == 0 {
+		return nil, errors.New("user not found")
+	}
+
+	return &user, nil
+

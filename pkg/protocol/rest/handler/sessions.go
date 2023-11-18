@@ -80,21 +80,3 @@ func (s SessionHandler) HandleLogin(c *gin.Context) {
 		"message": "Logged in successfully",
 	})
 }
-
-func getCurrentUser(c *gin.Context) (*user.User, error) {
-	session := sessions.Default(c)
-	userID := session.Get("user_id")
-
-	if userID == nil {
-		return nil, errors.New("user not logged in")
-	}
-
-	var user user.User
-	result := s.db.First(&user, "id = ?", userID)
-
-	if result.Error != nil {
-		return nil, result.Error
-	}
-
-	return &user, nil
-}

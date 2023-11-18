@@ -8,9 +8,10 @@ import (
 	"github.com/gin-contrib/sessions/cookie"
 	"github.com/gin-gonic/gin"
 	"github.com/jinzhu/gorm"
+	"github.com/rayjosong/splitbill/internal/models"
 	"github.com/rayjosong/splitbill/pkg/protocol/rest/handler"
-	userModel "github.com/rayjosong/splitbill/pkg/user"
-	"github.com/rayjosong/splitbill/pkg/usercredentials"
+	"github.com/rayjosong/splitbill/pkg/user"
+	userRepo "github.com/rayjosong/splitbill/pkg/user/repository"
 )
 
 type DBConfig struct {
@@ -38,7 +39,7 @@ func main() {
 	}
 	defer db.Close()
 
-	db.AutoMigrate(&userModel.User{}, &usercredentials.UserCredentials{})
+	db.AutoMigrate(&models.User{})
 
 	router := gin.Default()
 
@@ -46,10 +47,9 @@ func main() {
 	router.Use(sessions.Sessions("mysession", store))
 
 	// **************** API *****************
-	SessionHandler := handler.NewSessionHandler()
+	SessionService := user.NewUserSessionService(userRepo.NewUserRepository(db))
+	SessionHandler := handler.NewSessionHandler(SessionService, SessionService)
 	router.POST("/signup", SessionHandler.HandleSignup)
-
-	router.POST("/login", SessionHandler.HandleLogin)
 
 	router.GET("/", func(c *gin.Context) {
 		c.JSON(200, gin.H{
